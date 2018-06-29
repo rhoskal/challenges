@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node test.js"
+  },
+  "devDependencies": {
+    "sinon": "^1.15.3",
+    "tape": "^4.6.3"
+  }
+}
