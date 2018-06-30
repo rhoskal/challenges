@@ -48,44 +48,49 @@ module.exports = class Merkle {
     return nodes;
   }
 
-  getVerification(str) {
-    const index = this.levels[0].indexOf(str);
+  getVerification(str, proof = []) {
+    const idx = this.levels[0].indexOf(str);
 
-    if (index === -1) {
+    if (idx === -1) {
       return false;
     } else {
-      const nodes = this._findPairs(index);
-      const breadcrumbs = [];
+      const nodes = this._findPairs(idx);
 
       // fill in leaf node
-      breadcrumbs.push(nodes[0][0] === str ? nodes[0][1] : nodes[0][0]);
+      proof.push(nodes[0][0] === str ? [1, nodes[0][1]] : [0, nodes[0][0]]);
+
       let tempHash = this.hashingFn(nodes[0][0] + nodes[0][1]);
       for (let i = 1; i < nodes.length; i++) {
         if (nodes[i][0] === tempHash) {
-          breadcrumbs.push(nodes[i][1]);
+          proof.push([1, nodes[i][1]]);
         } else {
-          breadcrumbs.push(nodes[i][0]);
+          proof.push([0, nodes[i][0]]);
         }
 
         tempHash = this.hashingFn(nodes[i][0] + nodes[i][1]);
       }
 
       return {
-        index: index,
-        breadcrumbs: breadcrumbs
+        index: idx,
+        breadcrumbs: proof
       };
     }
   }
 
   verify(str, root, obj, hasher) {
-    let finalHash = obj.index % 2 === 0 ? hasher(str + obj.breadcrumbs[0]) : hasher(obj.breadcrumbs[0] + str);
+    let finalHash =
+      obj.breadcrumbs[0][0] % 2 === 0 ?
+        hasher(obj.breadcrumbs[0][1] + str) :
+        hasher(str + obj.breadcrumbs[0][1]);
 
     for (let i = 1; i < obj.breadcrumbs.length; i++) {
-      finalHash = hasher(finalHash + obj.breadcrumbs[i]);
+      finalHash =
+        obj.breadcrumbs[i][0] % 2 === 0 ?
+          hasher(obj.breadcrumbs[i][1] + finalHash) :
+          hasher(finalHash + obj.breadcrumbs[i][1]);
     }
 
     return finalHash === this.root;
-
   }
 
   get root() {
