@@ -29,21 +29,45 @@ module.exports = class Merkle {
     }
   }
 
+  _findPairs(index) {
+    let nodes = []
+
+    for (let i = 0; i < this.levels.length; i++) {
+      let level = this.levels[i];
+      let width = level.length;
+
+      if (!(index === width - 1 && width % 2 === 1)) {
+        const left = (index % 2) ? level[index - 1] : level[index];
+        const right = (index % 2) ? level[index] : level[index + 1];
+        nodes.push([left, right]);
+      }
+
+      index = Math.floor(index / 2);
+    }
+
+    return nodes;
+  }
+
   getVerification(str) {
     const index = this.levels[0].indexOf(str);
 
     if (index === -1) {
       return false;
     } else {
+      const nodes = this._findPairs(index);
       const breadcrumbs = [];
-      breadcrumbs.push(index % 2 === 0 ? this.levels[0][index + 1] : this.levels[0][index - 1]);
 
-      let pos = Math.round(index / 2);
-      let level = 1;
-      while (level < this.levels.length - 1) {
-        breadcrumbs.push(pos % 2 === 0 ? this.levels[level][pos + 1] : this.levels[level][pos - 1]);
-        pos = Math.trunc(pos / 2);
-        level++;
+      // fill in leaf node
+      breadcrumbs.push(nodes[0][0] === str ? nodes[0][1] : nodes[0][0]);
+      let tempHash = this.hashingFn(nodes[0][0] + nodes[0][1]);
+      for (let i = 1; i < nodes.length; i++) {
+        if (nodes[i][0] === tempHash) {
+          breadcrumbs.push(nodes[i][1]);
+        } else {
+          breadcrumbs.push(nodes[i][0]);
+        }
+
+        tempHash = this.hashingFn(nodes[i][0] + nodes[i][1]);
       }
 
       return {
@@ -54,22 +78,14 @@ module.exports = class Merkle {
   }
 
   verify(str, root, obj, hasher) {
-    let finalHash = hasher(str + obj.breadcrumbs[0]);
-    // let finalHash = obj.index % 2 === 0 ? hasher(str + obj.breadcrumbs[0]) : hasher(obj.breadcrumbs[0] + str);
-    // let pos = Math.round(obj.index / 2);
-    let level = 1;
-    while(level < this.levels.length - 1) {
-      console.log(finalHash);
-      if (finalHash === this.root) {
-        return true;
-      }
+    let finalHash = obj.index % 2 === 0 ? hasher(str + obj.breadcrumbs[0]) : hasher(obj.breadcrumbs[0] + str);
 
-      finalHash = hasher(finalHash + obj.breadcrumbs[level]);
-      // pos = Math.trunc(pos / 2);
-      level++;
+    for (let i = 1; i < obj.breadcrumbs.length; i++) {
+      finalHash = hasher(finalHash + obj.breadcrumbs[i]);
     }
 
-    return false;
+    return finalHash === this.root;
+
   }
 
   get root() {

@@ -1,4 +1,4 @@
-# Dutchie JS Coding Challenges
+# JS Coding Challenges
 
 These are some basic (and advanced) coding challenges
 

@@ -69,7 +69,7 @@ console.log(myMerkle.root); // -1427219841
 myMerkle.getVerification('not in tree'); // false
 
 // this is an object that the server would return
-var verificationObject = myMerkle.getVerification('test'); // { index: 3, breadcrumbs: [ 'a', '-1790830488' ] }
+var obj = myMerkle.getVerification('test'); // { index: 3, breadcrumbs: [ 'a', '-1790830488' ] }
 
 // this is how the client would verify that the contact exists (the client somehow already knows the root)
 var root = myMerkle.root;
