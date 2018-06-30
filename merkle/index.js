@@ -16,15 +16,12 @@ module.exports = class Merkle {
       const left = data[i];
       const right = (i + 1 === data.length) ? left : data[i + 1];
 
-      // node = left + right
       level.push(this.hashingFn(left + right));
     }
 
     if (level.length > 1) {
-      // keep deriving
       return [level].concat(this._buildTree(level));
     } else {
-      // found root node
       return [level];
     }
   }
@@ -32,14 +29,16 @@ module.exports = class Merkle {
   _findPairs(index) {
     let nodes = []
 
-    for (let i = 0; i < this.levels.length; i++) {
+    for (let i = 0; i < this.levels.length - 1; i++) {
       let level = this.levels[i];
       let width = level.length;
 
       if (!(index === width - 1 && width % 2 === 1)) {
-        const left = (index % 2) ? level[index - 1] : level[index];
-        const right = (index % 2) ? level[index] : level[index + 1];
+        const left = index % 2 === 0 ? level[index] : level[index - 1];
+        const right = index % 2 === 0 ? level[index + 1] : level[index];
         nodes.push([left, right]);
+      } else {
+        nodes.push([level[index], level[index]]);
       }
 
       index = Math.floor(index / 2);
@@ -79,13 +78,13 @@ module.exports = class Merkle {
 
   verify(str, root, obj, hasher) {
     let finalHash =
-      obj.breadcrumbs[0][0] % 2 === 0 ?
+      obj.breadcrumbs[0][0] === 0 ?
         hasher(obj.breadcrumbs[0][1] + str) :
         hasher(str + obj.breadcrumbs[0][1]);
 
     for (let i = 1; i < obj.breadcrumbs.length; i++) {
       finalHash =
-        obj.breadcrumbs[i][0] % 2 === 0 ?
+        obj.breadcrumbs[i][0] === 0 ?
           hasher(obj.breadcrumbs[i][1] + finalHash) :
           hasher(finalHash + obj.breadcrumbs[i][1]);
     }
